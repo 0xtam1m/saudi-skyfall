@@ -22,25 +22,12 @@ Saudi Skyfall is a browser-based arcade game that celebrates Saudi Arabian cultu
 3. **Catch** falling items to earn points
 4. **Avoid** missing items - 3 misses and it's game over!
 
-![Controls](screenshots/controls.png)
-
 ## Game Features
 
 - **Progressive Difficulty**: Items fall faster and spawn more frequently as your score increases
 - **Beautiful Design**: Saudi-inspired color scheme with gold and green accents
 - **Responsive Controls**: Smooth basket movement for precise catching
 - **Instant Restart**: Jump back into the action with one click
-
-## Screenshots
-
-### Start Screen
-![Start](screenshots/start.png)
-
-### Gameplay Action
-![Action](screenshots/action.png)
-
-### Game Over
-![Game Over](screenshots/gameover.png)
 
 ## Installation
 
@@ -73,10 +60,6 @@ The game uses colors inspired by the Saudi Arabian flag and traditional aestheti
 ## Contributing
 
 Contributions are welcome! Feel free to submit issues or pull requests.
-
-## License
-
-This project is open source and available under the MIT License.
 
 ---
 
