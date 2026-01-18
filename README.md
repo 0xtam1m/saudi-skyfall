@@ -2,8 +2,6 @@
 
 A fun, Saudi-themed catching game built with HTML5 Canvas. Catch falling traditional Saudi items in your basket before they hit the ground!
 
-![Gameplay Screenshot](screenshots/gameplay.png)
-
 ## About The Game
 
 Saudi Skyfall is a browser-based arcade game that celebrates Saudi Arabian culture through gameplay. Players control a traditional woven basket, catching iconic Saudi items as they fall from the desert sky.
