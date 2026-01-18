@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saudi Skyfall</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a472a 0%, #2d5a3f 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #gameContainer {
+            position: relative;
+            border: 4px solid #c9a227;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(201, 162, 39, 0.5);
+        }
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%);
+            border-radius: 6px;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            color: #1a472a;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+            font-weight: bold;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(26, 71, 42, 0.95);
+            color: #c9a227;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            border: 3px solid #c9a227;
+        }
+        #gameOver h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        #gameOver p {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #restartBtn {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #c9a227;
+            color: #1a472a;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, background 0.2s;
+        }
+        #restartBtn:hover {
+            background: #d4af37;
+            transform: scale(1.05);
+        }
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #1a472a;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="600" height="700"></canvas>
+        <div id="ui">
+            <span id="score">Score: 0</span>
+            <span id="misses">Misses: 0/3</span>
+        </div>
+        <div id="gameOver">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button id="restartBtn">Play Again</button>
+        </div>
+        <div id="instructions">Use ← → Arrow Keys to move the basket</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const missesElement = document.getElementById('misses');
+        const gameOverElement = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restartBtn');
+
+        // Game state
+        let score = 0;
+        let misses = 0;
+        let gameRunning = true;
+        let items = [];
+        let lastSpawnTime = 0;
+        let spawnInterval = 1500;
+
+        // Saudi items with emojis and names
+        const saudiItems = [
+            { emoji: '🌴', name: 'Dates', color: '#8B4513' },
+            { emoji: '🍪', name: 'كليجة', color: '#D2691E' },
+            { emoji: '⚔️', name: 'Sword', color: '#C0C0C0' },
+            { emoji: '☕', name: 'دلة', color: '#DAA520' }
+        ];
+
+        // Basket
+        const basket = {
+            x: canvas.width / 2 - 50,
+            y: canvas.height - 80,
+            width: 100,
+            height: 60,
+            speed: 8
+        };
+
+        // Input handling
+        const keys = {
+            left: false,
+            right: false
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') keys.left = true;
+            if (e.key === 'ArrowRight') keys.right = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') keys.left = false;
+            if (e.key === 'ArrowRight') keys.right = false;
+        });
+
+        restartBtn.addEventListener('click', restartGame);
+
+        function spawnItem() {
+            const itemType = saudiItems[Math.floor(Math.random() * saudiItems.length)];
+            items.push({
+                x: Math.random() * (canvas.width - 40) + 20,
+                y: -40,
+                width: 40,
+                height: 40,
+                speed: 3 + Math.random() * 2 + score * 0.05,
+                ...itemType
+            });
+        }
+
+        function drawBasket() {
+            // Basket body
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.moveTo(basket.x, basket.y + 20);
+            ctx.lineTo(basket.x + 10, basket.y + basket.height);
+            ctx.lineTo(basket.x + basket.width - 10, basket.y + basket.height);
+            ctx.lineTo(basket.x + basket.width, basket.y + 20);
+            ctx.closePath();
+            ctx.fill();
+
+            // Basket rim
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(basket.x - 5, basket.y + 15, basket.width + 10, 10);
+
+            // Basket weave pattern
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(basket.x + 15 + i * 18, basket.y + 25);
+                ctx.lineTo(basket.x + 10 + i * 18, basket.y + basket.height - 5);
+                ctx.stroke();
+            }
+        }
+
+        function drawItem(item) {
+            ctx.font = '36px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(item.emoji, item.x + item.width / 2, item.y + item.height / 2);
+        }
+
+        function drawGround() {
+            // Sand/ground
+            ctx.fillStyle = '#F4E4BA';
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+
+            // Palm tree decorations
+            ctx.font = '30px Arial';
+            ctx.fillText('🌴', 30, canvas.height - 25);
+            ctx.fillText('🌴', canvas.width - 30, canvas.height - 25);
+        }
+
+        function drawSun() {
+            ctx.font = '50px Arial';
+            ctx.fillText('☀️', canvas.width - 50, 60);
+        }
+
+        function checkCollision(item) {
+            return (
+                item.x < basket.x + basket.width &&
+                item.x + item.width > basket.x &&
+                item.y + item.height > basket.y + 15 &&
+                item.y < basket.y + basket.height
+            );
+        }
+
+        function update(currentTime) {
+            if (!gameRunning) return;
+
+            // Move basket
+            if (keys.left && basket.x > 0) {
+                basket.x -= basket.speed;
+            }
+            if (keys.right && basket.x < canvas.width - basket.width) {
+                basket.x += basket.speed;
+            }
+
+            // Spawn items
+            if (currentTime - lastSpawnTime > spawnInterval) {
+                spawnItem();
+                lastSpawnTime = currentTime;
+                // Gradually increase spawn rate
+                spawnInterval = Math.max(600, spawnInterval - 10);
+            }
+
+            // Update items
+            for (let i = items.length - 1; i >= 0; i--) {
+                items[i].y += items[i].speed;
+
+                // Check collision with basket
+                if (checkCollision(items[i])) {
+                    score++;
+                    scoreElement.textContent = `Score: ${score}`;
+                    items.splice(i, 1);
+                    continue;
+                }
+
+                // Check if item missed (fell below screen)
+                if (items[i].y > canvas.height) {
+                    misses++;
+                    missesElement.textContent = `Misses: ${misses}/3`;
+                    items.splice(i, 1);
+
+                    if (misses >= 3) {
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background elements
+            drawSun();
+            drawGround();
+
+            // Draw items
+            items.forEach(drawItem);
+
+            // Draw basket
+            drawBasket();
+        }
+
+        function gameLoop(currentTime) {
+            update(currentTime);
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            finalScoreElement.textContent = score;
+            gameOverElement.style.display = 'block';
+        }
+
+        function restartGame() {
+            score = 0;
+            misses = 0;
+            items = [];
+            gameRunning = true;
+            spawnInterval = 1500;
+            basket.x = canvas.width / 2 - 50;
+            scoreElement.textContent = 'Score: 0';
+            missesElement.textContent = 'Misses: 0/3';
+            gameOverElement.style.display = 'none';
+        }
+
+        // Start game
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
